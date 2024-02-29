@@ -12,6 +12,7 @@ import {
 	TOKEN_2022_PROGRAM_ID,
 	burn,
 	closeAccount,
+	getAccount,
 	getMint,
 } from '@solana/spl-token'
 import printTableData from './print-helpers'
@@ -23,7 +24,7 @@ async function main() {
 	 * Create a connection and initialize a keypair if one doesn't already exists.
 	 * If a keypair exists, airdrop a sol if needed.
 	 */
-	const connection = new Connection(clusterApiUrl(CLUSTER))
+	const connection = new Connection('http://127.0.0.1:8899')
 	const payer = await initializeKeypair(connection)
 
 	console.log(`public key: ${payer.publicKey.toBase58()}`)
@@ -67,28 +68,37 @@ async function main() {
 	 *
 	 * Should throw `SendTransactionError`
 	 */
-	try {
-		await closeAccount(
-			connection,
-			payer,
-			mintKeypair.publicKey,
-			payer.publicKey,
-			payer,
-			[],
-			{commitment: 'finalized'},
-			TOKEN_2022_PROGRAM_ID
-		)
-	} catch (e) {
-		console.log('Error closing mint account: ', e), '\n'
-	}
+	// try {
+	// 	await closeAccount(
+	// 		connection,
+	// 		payer,
+	// 		mintKeypair.publicKey,
+	// 		payer.publicKey,
+	// 		payer,
+	// 		[],
+	// 		{commitment: 'finalized'},
+	// 		TOKEN_2022_PROGRAM_ID
+	// 	)
+	// } catch (e) {
+	// 	console.log('Error closing mint account: ', e), '\n'
+	// }
+
+	const sourceAccountInfo = await getAccount(
+		connection, 
+		sourceAccount, 
+		'finalized',
+		TOKEN_2022_PROGRAM_ID
+	)
+	console.log('Source account info:')
+	console.log(sourceAccountInfo)
 
 	const burnSignature = await burn(
 		connection,
 		payer,
-		sourceKeypair.publicKey,
+		sourceAccount,
 		mintKeypair.publicKey,
-		payer.publicKey,
-		1 * LAMPORTS_PER_SOL,
+		sourceKeypair,
+		sourceAccountInfo.amount,
 		[],
 		{commitment: 'finalized'},
 		TOKEN_2022_PROGRAM_ID
@@ -100,19 +110,34 @@ async function main() {
 	/**
 	 * Try closing the mint account when supply is 0
 	 */
-	const closeSignature = await closeAccount(
-		connection,
-		payer,
-		mintKeypair.publicKey,
-		payer.publicKey,
-		payer,
-		[],
-		{commitment: 'finalized'},
-		TOKEN_2022_PROGRAM_ID
-	)
-	console.log(
-		`Check the transaction at: https://explorer.solana.com/tx/${closeSignature}?cluster=${CLUSTER}`
-	)
+	try {
+
+		const mintInfo = await getMint(
+			connection, 
+			mintKeypair.publicKey, 
+			'finalized',
+			TOKEN_2022_PROGRAM_ID
+		)
+	
+		printTableData(mintInfo)
+
+		const closeSignature = await closeAccount(
+			connection,
+			payer,
+			mintKeypair.publicKey,
+			payer.publicKey,
+			payer,
+			[],
+			{commitment: 'finalized'},
+			TOKEN_2022_PROGRAM_ID
+		)
+		console.log(
+			`Check the transaction at: https://explorer.solana.com/tx/${closeSignature}?cluster=${CLUSTER}`
+		)
+	} catch (e) {
+		console.log(e);
+	}
+
 }
 
 main()
