@@ -7,13 +7,14 @@ import {
 } from '@solana/web3.js'
 import {initializeKeypair} from './keypair-helpers'
 import {createClosableMint} from './create-mint'
-import {mintToken} from './mint-token'
 import {
 	TOKEN_2022_PROGRAM_ID,
 	burn,
 	closeAccount,
+	createAccount,
 	getAccount,
 	getMint,
+	mintTo,
 } from '@solana/spl-token'
 import printTableData from './print-helpers'
 
@@ -24,18 +25,20 @@ async function main() {
 	 * Create a connection and initialize a keypair if one doesn't already exists.
 	 * If a keypair exists, airdrop a sol if needed.
 	 */
-	const connection = new Connection('http://127.0.0.1:8899')
+	const connection = new Connection(clusterApiUrl(CLUSTER))
 	const payer = await initializeKeypair(connection)
 
 	console.log(`public key: ${payer.publicKey.toBase58()}`)
 
 	const mintKeypair = Keypair.generate()
-	console.log('\nmint public key: ' + mintKeypair.publicKey.toBase58())
+	const mint = mintKeypair.publicKey
+	console.log(
+		'\nmint public key: ' + mintKeypair.publicKey.toBase58() + '\n\n'
+	)
 
 	/**
 	 * Creating a mint with close authority
 	 */
-	console.log()
 	const decimals = 9
 
 	await createClosableMint(CLUSTER, connection, payer, mintKeypair, decimals)
@@ -43,13 +46,30 @@ async function main() {
 	/**
 	 * Creating an account and mint 1 token to that account
 	 */
-	console.log()
+	console.log('Creating an account...')
 	const sourceKeypair = Keypair.generate()
-	const sourceAccount = await mintToken(
+	const sourceAccount = await await createAccount(
 		connection,
 		payer,
-		mintKeypair.publicKey,
-		sourceKeypair.publicKey
+		mint,
+		sourceKeypair.publicKey,
+		undefined,
+		{commitment: 'finalized'},
+		TOKEN_2022_PROGRAM_ID
+	)
+
+	console.log('Minting 1 token...\n\n')
+	const amount = 1 * LAMPORTS_PER_SOL
+	await mintTo(
+		connection,
+		payer,
+		mint,
+		sourceAccount,
+		payer,
+		amount,
+		[payer],
+		{commitment: 'finalized'},
+		TOKEN_2022_PROGRAM_ID
 	)
 
 	/**
@@ -68,30 +88,33 @@ async function main() {
 	 *
 	 * Should throw `SendTransactionError`
 	 */
-	// try {
-	// 	await closeAccount(
-	// 		connection,
-	// 		payer,
-	// 		mintKeypair.publicKey,
-	// 		payer.publicKey,
-	// 		payer,
-	// 		[],
-	// 		{commitment: 'finalized'},
-	// 		TOKEN_2022_PROGRAM_ID
-	// 	)
-	// } catch (e) {
-	// 	console.log('Error closing mint account: ', e), '\n'
-	// }
+	try {
+		await closeAccount(
+			connection,
+			payer,
+			mintKeypair.publicKey,
+			payer.publicKey,
+			payer,
+			[],
+			{commitment: 'finalized'},
+			TOKEN_2022_PROGRAM_ID
+		)
+	} catch (e) {
+		console.log(
+			'Close account fails here because the supply is not zero. Check the program logs:',
+			(e as any).logs,
+			'\n\n'
+		)
+	}
 
 	const sourceAccountInfo = await getAccount(
-		connection, 
-		sourceAccount, 
+		connection,
+		sourceAccount,
 		'finalized',
 		TOKEN_2022_PROGRAM_ID
 	)
-	console.log('Source account info:')
-	console.log(sourceAccountInfo)
 
+	console.log('Burning the supply...')
 	const burnSignature = await burn(
 		connection,
 		payer,
@@ -104,23 +127,23 @@ async function main() {
 		TOKEN_2022_PROGRAM_ID
 	)
 	console.log(
-		`Check the transaction at: https://explorer.solana.com/tx/${burnSignature}?cluster=${CLUSTER}`
+		`Check the transaction at: https://explorer.solana.com/tx/${burnSignature}?cluster=${CLUSTER} \n\n`
 	)
 
 	/**
 	 * Try closing the mint account when supply is 0
 	 */
 	try {
-
 		const mintInfo = await getMint(
-			connection, 
-			mintKeypair.publicKey, 
+			connection,
+			mintKeypair.publicKey,
 			'finalized',
 			TOKEN_2022_PROGRAM_ID
 		)
-	
+
 		printTableData(mintInfo)
 
+		console.log('Closing after burning the supply...')
 		const closeSignature = await closeAccount(
 			connection,
 			payer,
@@ -132,12 +155,11 @@ async function main() {
 			TOKEN_2022_PROGRAM_ID
 		)
 		console.log(
-			`Check the transaction at: https://explorer.solana.com/tx/${closeSignature}?cluster=${CLUSTER}`
+			`Check the transaction at: https://explorer.solana.com/tx/${closeSignature}?cluster=${CLUSTER} \n\n`
 		)
 	} catch (e) {
-		console.log(e);
+		console.log(e)
 	}
-
 }
 
 main()
