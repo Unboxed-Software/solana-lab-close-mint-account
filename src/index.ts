@@ -1,3 +1,4 @@
+import {initializeKeypair} from '@solana-developers/helpers'
 import {
 	Cluster,
 	Connection,
@@ -5,7 +6,6 @@ import {
 	Keypair,
 	LAMPORTS_PER_SOL,
 } from '@solana/web3.js'
-import {initializeKeypair} from './keypair-helpers'
 import {createClosableMint} from './create-mint'
 import {
 	TOKEN_2022_PROGRAM_ID,
@@ -17,6 +17,8 @@ import {
 	mintTo,
 } from '@solana/spl-token'
 import printTableData from './print-helpers'
+import dotenv from 'dotenv'
+dotenv.config()
 
 const CLUSTER: Cluster = 'devnet'
 
