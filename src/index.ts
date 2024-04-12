@@ -1,40 +1,31 @@
-import {initializeKeypair} from '@solana-developers/helpers'
-import {Cluster, Connection, clusterApiUrl, Keypair} from '@solana/web3.js'
+import { initializeKeypair } from '@solana-developers/helpers'
+import { Connection, Keypair } from '@solana/web3.js'
 import dotenv from 'dotenv'
 dotenv.config()
 
-const CLUSTER: Cluster = 'devnet'
+/**
+ * Create a connection and initialize a keypair if one doesn't already exists.
+ * If a keypair exists, airdrop a sol if needed.
+ */
+const connection = new Connection("http://127.0.0.1:8899")
+const payer = await initializeKeypair(connection)
 
-async function main() {
-	/**
-	 * Create a connection and initialize a keypair if one doesn't already exists.
-	 * If a keypair exists, airdrop a sol if needed.
-	 */
-	const connection = new Connection(clusterApiUrl(CLUSTER))
-	const payer = await initializeKeypair(connection, {
-		envFileName: '.env',
-		envVariableName: 'PRIVATE_KEY',
-	})
+console.log(`public key: ${payer.publicKey.toBase58()}`)
 
-	console.log(`public key: ${payer.publicKey.toBase58()}`)
+const mintKeypair = Keypair.generate()
+const mint = mintKeypair.publicKey
+console.log(
+	'\nmint public key: ' + mintKeypair.publicKey.toBase58() + '\n\n'
+)
 
-	const mintKeypair = Keypair.generate()
-	const mint = mintKeypair.publicKey
-	console.log(
-		'\nmint public key: ' + mintKeypair.publicKey.toBase58() + '\n\n'
-	)
+// CREATE A MINT WITH CLOSE AUTHORITY
 
-	// CREATE A MINT WITH CLOSE AUTHORITY
+// MINT TOKEN
 
-	// MINT TOKEN
+// VERIFY SUPPLY
 
-	// VERIFY SUPPLY
+// TRY CLOSING WITH NON ZERO SUPPLY
 
-	// TRY CLOSING WITH NON ZERO SUPPLY
+// BURN SUPPLY
 
-	// BURN SUPPLY
-
-	// CLOSE MINT
-}
-
-main()
+// CLOSE MINT
