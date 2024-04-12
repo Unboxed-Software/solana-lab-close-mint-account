@@ -1,5 +1,4 @@
 import {
-	Cluster,
 	sendAndConfirmTransaction,
 	Connection,
 	Keypair,
@@ -17,7 +16,6 @@ import {
 } from '@solana/spl-token'
 
 export async function createClosableMint(
-	cluster: Cluster,
 	connection: Connection,
 	payer: Keypair,
 	mintKeypair: Keypair,
@@ -57,10 +55,7 @@ export async function createClosableMint(
 		connection,
 		mintTransaction,
 		[payer, mintKeypair],
-		{commitment: 'finalized'}
-	)
-	console.log(
-		`Check the transaction at: https://explorer.solana.com/tx/${signature}?cluster=${cluster} \n\n`
+		{ commitment: 'finalized' }
 	)
 
 	return signature
