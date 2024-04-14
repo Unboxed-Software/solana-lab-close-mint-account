@@ -1,5 +1,4 @@
 import {
-	Cluster,
 	Connection,
 	Keypair,
 	LAMPORTS_PER_SOL,
@@ -17,8 +16,6 @@ import {
 } from '@solana/spl-token'
 import dotenv from 'dotenv'
 dotenv.config()
-
-const CLUSTER: Cluster = 'devnet'
 
 /**
  * Create a connection and initialize a keypair if one doesn't already exists.
