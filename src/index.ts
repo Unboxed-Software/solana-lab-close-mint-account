@@ -4,7 +4,7 @@ import {
 	LAMPORTS_PER_SOL,
 } from '@solana/web3.js'
 import { initializeKeypair } from '@solana-developers/helpers'
-import { createClosableMint } from './create-mint'
+// import { createClosableMint } from './create-mint' - uncomment this in a later step
 import {
 	TOKEN_2022_PROGRAM_ID,
 	burn,
